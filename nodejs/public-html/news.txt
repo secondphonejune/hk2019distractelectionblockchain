@@ -1,0 +1,2 @@
+11th Nov 2019 項目開始 Project kick starts
+16th Nov 2019 完成智能合約部份, 開始開發網站部份, 惟現時選舉只包括港島部份

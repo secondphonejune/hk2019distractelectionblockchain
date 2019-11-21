@@ -1,0 +1,82 @@
+<html>
+<head>    
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Blockchain based folk election project for Hong Kong 2019 District Council Election">
+    <!-- SITE TITLE -->
+    <title>民間區塊鏈2019區議會選舉 Folk 2019 Hong Kong District Council Election on Blockchain</title>
+    
+	<style id="antiClickjack">
+		body{display:none !important;}
+	</style>
+	<script type="text/javascript">
+		if (self === top) {
+			var antiClickjack = document.getElementById("antiClickjack");
+			antiClickjack.parentNode.removeChild(antiClickjack);
+		} else {
+			top.location = self.location;
+		}
+	</script>
+	<style>
+	*{
+		margin: auto;
+		text-align: center;
+		width: 80%;
+	}
+	img{
+		width: 60%;
+	}
+	</style>
+</head>
+<body>
+<h1>民間區塊鏈2019區議會選舉</h1>
+<h1>Folk 2019 Hong Kong district council election on blockchain</h1>
+<br><br>
+<h3>常見問題 (FAQ)</h3>
+<p>點解要設立這個區塊鏈選舉?</p>
+<p>確保香港人, 特別是使用網絡的年輕人, 能夠表達對區議會以至政府的意見.
+同時研究如何利用區塊鏈和網絡技術去做一次可信性高, 公開透明, 而且不會受個別國家或組織影響/破壞的選舉.
+過去不少組織曾經辦過民間投票, 但因為系統來自single party, 當受國家級攻擊時很容易便會令伺服器支持不住令投票不能進行.
+我們這次利用區塊鏈作為總票箱, 確保票箱的結果不會被刪除, 而且投票網站的web app都非常容易deploy (Node.js). 
+無論個別國家或組織如何攻擊, 無論多少個投票網站被攻擊至倒下, 還可以建立更多的投票網站繼續運作, 
+只要有至少一個投票網站存在, 選舉都不會受阻礙. 另一方面, 把參與營運投票的各個組織對選舉的影響力和知道的資料降到最低. 
+投票網站只知道經過網站投票的選民的電郵, 其他選民資料, 包括名字和HKID, 所有營運投票的組織和人都不知道.
+選民的私隱度提高, 也能增加投票意欲.
+</p>
+<p>為何要到etherscan制作VoterID?</p>
+<p>確保你的身份不會被投票網站和我們知道</p>
+<p>為何要輸入電郵?</p>
+<p>我們將發送一個驗證碼到你的電郵, 確保你是真人和沒有投過票.</p>
+<p>為何投票後在Etherscan查詢時顯示未收到選票?</p>
+<p>非常有可能你的選票還在排期未輸入到智能合約. 請在Etherscan相關智能合約網頁, 按Transaction, 
+看看你交選票的網站是否還有pending transaction, 可能你的選票在pending transaction內.
+如果你的票站沒有pending transaction, 但你的選票還不在, 請和我們聯絡.</p>
+<!--<p>這次選舉有甚麼不足之處?</p>
+<p>唔夠時間, 你看看這個網站如何簡陋便知, 還有不少地方只有中文或只有英文, 因無時間寫哂兩種語文.
+另外就係沒有時間輸入港島以外的區議會選舉名單, 希望有人幫手打埋其他區落electionList_smartcontract_V1.sol和councils.json度.
+還有的是我們欠缺一個方法去驗證選民真偽, 選民有可能被他人代投. 
+我們能做的最多只能夠簡單檢查HKID, 和利用email認證減少重複投票的機會.
+所以今次投票容許個別票站在個別選民的同意下人手地用新選票取代之前所投的選票.
+這大大增加投票智能合約的複雜性, 也令個別人士在選舉結果公佈後有些微可能找出選民所投的票. 這非常不理想.
+但確保選舉能夠運作, 選舉期間無人知選舉結果, 實時公佈選舉統計數字等等地方, 隱藏選民資料等方面, 還算做得到.
+</p>-->
+<p>其他問題</p>
+<p>You can also contact me https://t.me/@secondphonejune</p>
+
+<br><br>
+<h3>我想幫忙 I would like to help</h3>
+<p>You can <br>
+1) Join the testing and give feedback<br>
+2) Promote this project<br>
+3) Donate if you have ETH (We need 100 ETH in total for handling 200K votes, extra ETH will send to 星火, if they accept ETH)<br>
+<a href="https://etherscan.io/address/0x0fe7c97d52d49a6249ac4ffab6e8e700b1c7e22d">Check our current balance here</a><br>
+4) Help extending the election to cover all council<br>
+5) Help building the website (need someone to rebuild the website with design) and debug<br>
+6) (Most Important) Become one of the votebox<br>
+<a href="https://github.com/secondphonejune/hk2019distractelectionblockchain">Visit our github page for details.</a>
+<p>   </p>
+<br><br>
+<p>   </p>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<html>
+<head>    
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Blockchain based folk election project for Hong Kong 2019 District Council Election">
+    <!-- SITE TITLE -->
+    <title>民間區塊鏈2019區議會選舉 Folk 2019 Hong Kong District Council Election on Blockchain</title>
+    
+	<style id="antiClickjack">
+		body{display:none !important;}
+	</style>
+	<script type="text/javascript">
+		if (self === top) {
+			var antiClickjack = document.getElementById("antiClickjack");
+			antiClickjack.parentNode.removeChild(antiClickjack);
+		} else {
+			top.location = self.location;
+		}
+		function addText(root, str){
+			var text = document.createTextNode(str);
+			document.getElementById(root).appendChild(text);
+		}
+		var smartContractAddr = "";
+		(function () {
+			// read text from URL location
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', 'config.json', true);
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					var type = xhr.getResponseHeader('Content-Type');
+					if (type.indexOf("text") !== 1) {
+						var response = xhr.responseText;
+						response = JSON.parse(response);
+						if(response && response["voteboxName"] && response["electionSmartcontractAddress"]){
+							addText("voteboxName",response["voteboxName"]);
+							smartContractAddr = encodeURIComponent(response["electionSmartcontractAddress"]);
+							document.getElementById("smartcontractAddr").href="https://etherscan.io/address/"
+								+smartContractAddr+"#readContract";
+							document.getElementById("smartcontractAddr2").href="https://etherscan.io/address/"
+								+smartContractAddr+"#readContract";
+							getBlockchainData();
+						}
+					}
+				}
+			}
+			xhr.send(null);
+		})();
+		function getBlockchainData(){
+			var xhr2 = new XMLHttpRequest();
+			xhr2.open('POST', 'https://node3.web3api.com/', true);
+			var parameter = {"jsonrpc":"2.0","id":1,"method":"eth_call",
+				"params":[{"to":smartContractAddr,
+					"data":"0x01cf6cd7"}
+					,"latest"]
+			};
+			xhr2.onreadystatechange = function () {
+				if (xhr2.readyState === 4 && xhr2.status === 200) {
+					var type = xhr2.getResponseHeader('Content-Type');
+					if (type.indexOf("text") !== 1) {
+						var response = xhr2.responseText;
+						response = JSON.parse(response);
+						if(response && response["result"]){
+							var votingStatus = parseInt(response["result"]);
+							if(votingStatus <=0) addText("votingStatus","投票未開始或已完結 Polling is not started or already completed.");
+							else addText("votingStatus","投票正進行 Polling is opened.");
+						}else{
+							alert(xhr2.responseText);
+						}
+					}
+				}
+			}
+			xhr2.send(JSON.stringify(parameter));
+		}
+	</script>
+	<style>
+	*{
+		margin: auto;
+		text-align: center;
+		width: 80%;
+	}
+	img{
+		width: 60%;
+	}
+	</style>
+</head>
+<body>
+<h1>民間區塊鏈2019區議會選舉</h1>
+<h1>Folk 2019 Hong Kong district council election on blockchain</h1>
+<br><br>
+<p>自2019年6月起, 香港人為守護自己的權利和自由開始左反對《逃犯條例》修訂草案運動. 
+2019年11月24日是區議會選舉的日子, 表達民意的大好機會. 
+但香港有不少人擔心政府會取消區議會選舉, 保障建制派的議席.
+我們利用以太幣為基礎的區塊鏈智能合約做了這個民間區塊鏈2019區議會選舉, 
+確保香港人, 特別是使用網絡的年輕人, 能夠表達對區議會以至政府的意見.
+所有程式碼和運作都會公開透明, 又盡量確保結果公平公正.</p>
+<p>Since June 2019, Hong Kong people has started Anti-Extradition Law Amendment Bill Movement to protect their own freedom and rights.
+Hong Kong will have a District Council Election on 24 Nov 2019. It is a great oppotunity for people to express their view to district council and government.
+However, there are concerns that Hong Kong government will pause or cancel the election in order to protect the interest of pro-government parties.
+That's why we have started this project, a folk election based on smart contracts on the Ethereum network.
+It is to make sure the Hong Kong people, especially the young people who are familiar with the Internet, can express their views to the public
+All program codes and executions will be done in a open and transparent way. And the result will be as fair and just as possible.
+</p>
+<a href="blockchain_election_details.pdf">更多技術詳情 More technical details (Chinese Only)</a>
+<a href="https://github.com/secondphonejune/hk2019distractelectionblockchain">Github page</a>
+<br>
+<br><br>
+<h3>選舉流程 (香港時間) Election Timeline (Hong Kong Time)</h3>
+<p>試運 2019年11月17日晚上10點開始至22日晚上10點 
+Test polling from 10pm 17th to 10pm 21th Nov 2019</p>
+<p>公佈試運投票結果22日晚上11點 Announce the test polling result at 11pm 21th Nov 2019 <a href="result_test.html">結果網頁 Result page </a></p>
+<p>正式投票 2019年11月24日早上7點半開始至24日晚上10點半 
+Real polling from 7:30am 24th to 10:30pm 24th Nov 2019</p>
+<p>公佈正式投票結果25日晚上12點01分 Announce the election result at 12:01am 25th Nov 2019 <a href="result_real.html">結果網頁 Result page </a></p>
+<br>
+<br><br>
+<h3>選舉現時狀態 Election Status:</h3>
+<text id="votingStatus"></text>
+<br><br>
+<p>這個票站是: This votebox is:</p>
+<text id="voteboxName"></text>
+<br>
+<a href="votebox.html">票站列表和投票統計 List of votebox website and voting statistics</a> 
+<p>任何票站都隨時可能因太多流量或受到攻擊而關閉, 但只要有一個票站在, 選舉都能夠繼續舉行
+Any votebox may be down anytime as too much traffic / attacked, 
+but the election can still go on as long as not all votebox is dead</p>
+<br>
+<br><br>
+<h3>最新消息 Recent News</h3>
+<object data="news.txt">Not supported</object>
+<br>
+<h3>如何投票 How to Vote:</h3>
+<p>1) 到Etherscan.io (中立區塊鏈資訊平台), 使用選舉智能合約, 輸入中文全名和身份證號碼以得到選民號碼
+Visit Etherscan.io (neutral Ethereum blockchain explorer), use election smart contract, input your full name and HKID number to get Voter ID</p>
+<a id="smartcontractAddr" href="">Link</a><br>
+<p>圖示 Example</p><img src="img/voterID.JPG"/><br>
+<p>2) 到以下網頁輸入選民號碼和電郵, 填寫選票. 電郵用來確保接收認證碼, 證明投票者為真人, 你將得到加密選票(需保密)
+Visit the following page to fill-in the Voter ID, email and vote. You will get an encrypted vote (keep this secret)</p>
+<a href="voting.html">Link</a><br>
+<p>3) 到Etherscan.io, 檢查自己是否投了票, 和選票是否還有效
+Visit Etherscan.io, check if you have voted and your vote is still valid. </p>
+<a id="smartcontractAddr2" href="">Link</a><br>
+<p>已投票圖示 Example of voted</p><img src="img/voted.JPG"/><br>
+<p>未投票圖示 Example of not voted</p><img src="img/notvoted.JPG"/><br>
+<p>有效投票圖示 Example of valid vote</p><img src="img/votevalid.JPG"/><br>
+<p>無效投票圖示 Example of invalid vote</p><img src="img/voteinvalid.JPG"/><br>
+
+<h3><a href="faq.html">常見問題 FAQ</a></h3>
+<br><br>
+<h3>我想幫忙 I would like to help</h3>
+<p>You can <br>
+1) Join the testing and give feedback<br>
+2) Promote this project<br>
+3) Donate if you have ETH (We need 100 ETH in total for handling 200K votes, extra ETH will send to 星火, if they accept ETH)<br>
+<a href="https://etherscan.io/address/0x0fe7c97d52d49a6249ac4ffab6e8e700b1c7e22d">Check our current balance here</a><br>
+4) Help extending the election to cover all council<br>
+5) Help building the website (need someone to rebuild the website with design) and debug<br>
+6) (Most Important) Become one of the votebox<br>
+<a href="https://github.com/secondphonejune/hk2019distractelectionblockchain">Visit our github page for details.</a>
+<br><br>
+<p>   </p>
+</body>
+</html>

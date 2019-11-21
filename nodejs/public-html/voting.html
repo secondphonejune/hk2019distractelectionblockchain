@@ -1,0 +1,466 @@
+<html>
+<head>    
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Blockchain based folk election project for Hong Kong 2019 District Council Election">
+    <!-- SITE TITLE -->
+    <title>民間區塊鏈2019區議會選舉 Folk 2019 Hong Kong District Council Election on Blockchain</title>
+    
+	<style id="antiClickjack">
+		body{display:none !important;}
+	</style>
+	<script src="jsencrypt-master/bin/jsencrypt.min.js"></script>
+	<script type="text/javascript">
+		if (self === top) {
+			var antiClickjack = document.getElementById("antiClickjack");
+			antiClickjack.parentNode.removeChild(antiClickjack);
+		} else {
+			top.location = self.location;
+		}
+		function addText(root, str){
+			var text = document.createTextNode(str);
+			document.getElementById(root).appendChild(text);
+		}
+		function escapeHTML(text) {
+		  var map = {
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&#039;'
+		  };
+
+		  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+		}
+		var smartContractAddr = "";
+		var encryption_public_key = "";
+		var councilCandidateList = [];
+		var isRunningElection = false;
+		(function () {
+			// read text from URL location
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', 'config.json', true);
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					var type = xhr.getResponseHeader('Content-Type');
+					if (type.indexOf("text") !== 1) {
+						var response = xhr.responseText;
+						response = JSON.parse(response);
+						if(response && response["encryption_public_key"] && response["electionSmartcontractAddress"]
+							&& response["ProblemContact"] && response["voteboxName"]){
+							smartContractAddr = encodeURIComponent(response["electionSmartcontractAddress"]);
+							encryption_public_key = response["encryption_public_key"];
+							document.getElementById("smartcontractAddr").href="https://etherscan.io/address/"
+								+smartContractAddr+"#readContract";
+							addText("voteboxName",response["voteboxName"]);
+							addText("problemContact",response["ProblemContact"]);
+							addText("problemContact2",response["ProblemContact"]);
+							getBlockchainData()
+						}
+					}
+				}
+			}
+			xhr.send(null);
+		})();
+		(function () {
+			// read text from URL location
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', 'councils.json', true);
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					var type = xhr.getResponseHeader('Content-Type');
+					if (type.indexOf("text") !== 1) {
+						var response = xhr.responseText;
+						response = JSON.parse(response);
+						if(response && response["councils"] && response["cadidateList"]){
+							for(var i in response["councils"]){
+								var councilName = escapeHTML(response["councils"][i]);
+								document.getElementById("council").options.add(new Option(councilName,councilName));
+								if(response["cadidateList"][councilName]) 
+									councilCandidateList[councilName]=response["cadidateList"][councilName];
+							}
+						}
+					}
+				}
+			}
+			xhr.send(null);
+		})();
+		
+		function getBlockchainData(){
+			var xhr2 = new XMLHttpRequest();
+			xhr2.open('POST', 'https://node3.web3api.com/', true);
+			var parameter = {"jsonrpc":"2.0","id":1,"method":"eth_call",
+				"params":[{"to":smartContractAddr,
+					"data":"0x01cf6cd7"}
+					,"latest"]
+			};
+			xhr2.onreadystatechange = function () {
+				if (xhr2.readyState === 4 && xhr2.status === 200) {
+					var type = xhr2.getResponseHeader('Content-Type');
+					if (type.indexOf("text") !== 1) {
+						var response = xhr2.responseText;
+						response = JSON.parse(response);
+						if(response && response["result"]){
+							var votingStatus = parseInt(response["result"]);
+							if(votingStatus <=0) addText("votingStatus","投票未開始或已完結 Polling is not started or already completed.");
+							else{
+								addText("votingStatus","投票正進行 Polling is opened.");
+								isRunningElection = true;
+							}
+						}else{
+							alert(xhr2.responseText);
+						}
+					}
+				}
+			}
+			xhr2.send(JSON.stringify(parameter));
+		}
+		function onChangeCouncil(councilName){
+			var candidateList = document.getElementById("candidate");
+			candidateList.options.length = 0;
+			candidateList.options.add(new Option("",""));
+			if(councilCandidateList[councilName]){
+				for(var i in councilCandidateList[councilName]){
+					var candidateName = councilCandidateList[councilName][i];
+					candidateList.options.add(new Option(candidateName,candidateName));
+				}
+			}
+		}
+		
+		function sendEmailCode(){
+			var emailEle = document.getElementById("email");
+			if(emailEle.value == "" || !emailEle.checkValidity()){
+				alert("Please input a valid email");
+				return;
+			}
+			var nonce = Math.floor((Math.random() * 90000000) + 10000000);
+			setCookie("xsrfsendEmailCode",nonce,5);
+			var parameter = {"email":emailEle.value};
+			var xhr = new XMLHttpRequest();
+			xhr.open('POST', '/sendEmailCode', true);
+			xhr.setRequestHeader("xsrfsendEmailCode", nonce);
+			xhr.setRequestHeader('Content-Type','application/json');
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					var type = xhr.getResponseHeader('Content-Type');
+					if (type.indexOf("text") !== 1) {
+						var response = xhr.responseText;
+						response = JSON.parse(response);
+						if(response && response["result"] && response["result"] =="Success"){
+							alert("We have sent you the validation code. Please check your email for the code. It may be in Inbox or spam folder.");
+						}else alert(xhr.responseText);
+					}
+				}
+			}
+			xhr.send(JSON.stringify(parameter));
+		}
+		function submitVote(){
+			document.getElementById("encryptedVote").innerHTML = "";
+			var voterID = document.getElementById("voterID");
+			if(voterID.value == "" || !voterID.checkValidity()){
+				alert("Please input a valid votedID.");
+				return;
+			}
+			var emailCode = document.getElementById("emailCode");
+			if(emailCode.value == "" || !emailCode.checkValidity()){
+				alert("Please input a valid verification code.");
+				return;
+			}
+			var council = document.getElementById("council");
+			if(council.value == ""){
+				alert("Please select a council.");
+				return;
+			}
+			//No checking as we allow people to vote to noone.
+			var candidate = document.getElementById("candidate"); 
+			if(encryption_public_key.length < 1){
+				alert("Do not have the encryption key to encrypt vote.");
+				return;
+			}
+			// Encrypt with the public key...
+			var encrypt = new JSEncrypt();
+			encrypt.setPublicKey(encryption_public_key);
+			var encryptionNonce = Math.floor((Math.random() * 90000000) + 10000000);
+			var encryptedMsg = encrypt.encrypt(encryptionNonce+":"+council.value+":"+candidate.value);
+			if(!encryptedMsg || encryptedMsg.length < 1){
+				alert("Encryption failed.");
+				return;
+			}
+			addText("encryptedVote",encryptedMsg);
+		}
+		function uploadVote(){
+			document.getElementById("voteTransaction").innerHTML = "";
+			var voterID = document.getElementById("voterID");
+			if(voterID.value == "" || !voterID.checkValidity()){
+				alert("Please input a valid votedID.");
+				return;
+			}
+			if(parseInt(voterID.value) <1){
+				alert("Please input a valid votedID.");
+				return;
+			}
+			var emailEle = document.getElementById("email");
+			if(emailEle.value == "" || !emailEle.checkValidity()){
+				alert("Please input a valid email");
+				return;
+			}
+			var emailCode = document.getElementById("emailCode");
+			if(emailCode.value == "" || !emailCode.checkValidity()){
+				alert("Please input a valid verification code.");
+				return;
+			}
+			emailCode = parseInt(emailCode.value);
+			if(emailCode <1){
+				alert("Please input a valid votedID.");
+				return;
+			}
+			var council = document.getElementById("council");
+			if(council.value == ""){
+				alert("Please select a council.");
+				return;
+			}
+			var encryptedVote = document.getElementById("encryptedVote");
+			if(encryptedVote.textContent == ""){
+				alert("Please encrypt your vote first.");
+				return;
+			}
+			if(!isRunningElection){
+				alert("The election is not running.");
+				return;
+			}
+			alert("Start uploading. It may take some time.");
+			//call isVoted to see if he is voted
+			var data="0xbb660d81";
+			data = appendIntToData(data,voterID.value);
+			makeEtherscanReq(data,function(responseText){
+				if(responseText.length <2 || !responseText.startsWith("0x")){
+					alert("invalid output when checking voterID");
+					return;
+				}
+				if(parseInt(responseText.substring(2)) >0){
+					alert("This voterID has voted before so this vote cannot be accepted. Please contact us if the previous vote is invalid.");
+					return;
+				}
+				//getEmailHash
+				data="0xf6bd53780000000000000000000000000000000000000000000000000000000000000020";
+				data = appendTextToData(data,emailEle.value);
+				makeEtherscanReq(data,function(responseText){
+					if(responseText.length <10){
+						alert("Invalid hased email. Cannot upload the vote.");
+						return false;
+					}
+					var hasedEmail = hexToBn(responseText);
+					//console.log(hasedEmail.toString());
+					//usedPhoneNumber to check if this email is used already
+					data="0xc2cea42e";
+					hexVal = (responseText.startsWith("0x"))? responseText.substring(2):responseText;
+					while(hexVal.length<64){
+						hexVal = hexVal+"0";
+					}
+					data += hexVal;
+					makeEtherscanReq(data,function(responseText){
+						if(responseText.length <2 || !responseText.startsWith("0x")){
+							alert("invalid output when checking email");
+							return;
+						}
+						if(parseInt(responseText.substring(2)) >0){
+							alert("This email has been used before so this vote cannot be accepted. Please contact us if the previous vote is invalid.");
+							return;
+						}
+						reallyUploadVote(voterID.value,hasedEmail.toString(),emailCode,council.value,encryptedVote.textContent);
+					});
+				});
+			});
+		}
+		function reallyUploadVote(voterID,hashedEmail,emailCode,council,encryptedVote){
+			var nonce = Math.floor((Math.random() * 90000000) + 10000000);
+			setCookie("xsrfuploadVoteCode",nonce,5);
+			var parameter = {"voterID":voterID,"emailCode":emailCode,
+				"council":council,"encryptedVote":encryptedVote,"hashedEmail":hashedEmail};
+			var xhr = new XMLHttpRequest();
+			xhr.open('POST', '/uploadVote', true);
+			xhr.setRequestHeader("xsrfuploadVoteCode", nonce);
+			xhr.setRequestHeader('Content-Type','application/json');
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					var type = xhr.getResponseHeader('Content-Type');
+					if (type.indexOf("text") !== 1) {
+						var response = xhr.responseText;
+						response = JSON.parse(response);
+						if(response && response["result"] && response["result"] =="Success"
+							&& response["msg"]){
+							alert("We are uploading your vote to blockchain. Please click the transaction link to check the status.");
+							document.getElementById("voteTransaction").innerHTML 
+								= '<a href="https://etherscan.io/tx/'+response["msg"]+'">Check the upload status.</a>';
+						}else alert(xhr.responseText);
+					}
+				}
+			}
+			xhr.send(JSON.stringify(parameter));
+		}
+		
+		function setCookie(name,value,mins) {
+			var expires = "";
+			if (mins) {
+				var date = new Date();
+				date.setTime(date.getTime() + (mins*60*1000));
+				expires = "; expires=" + date.toUTCString();
+			}
+			document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+		}
+		function getCookie(name) {
+			var nameEQ = name + "=";
+			var ca = document.cookie.split(';');
+			for(var i=0;i < ca.length;i++) {
+				var c = ca[i];
+				while (c.charAt(0)==' ') c = c.substring(1,c.length);
+				if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+			}
+			return null;
+		}
+		function eraseCookie(name) {   
+			document.cookie = name+'=; Max-Age=-99999999;';  
+		}
+		function encode_utf8(s){
+			var s = unescape(encodeURIComponent(s))
+			var h = ''
+			for (var i = 0; i < s.length; i++) {
+				h += s.charCodeAt(i).toString(16)
+			}
+			return h;
+		}
+		function makeEtherscanReq(data,callback){
+			var xhr2 = new XMLHttpRequest();
+			xhr2.open('POST', 'https://node3.web3api.com/', true);
+			var parameter = {"jsonrpc":"2.0","id":1,"method":"eth_call",
+				"params":[{"to":smartContractAddr,
+					"data":data}
+					,"latest"]
+			};
+			xhr2.onreadystatechange = function () {
+				if (xhr2.readyState === 4 && xhr2.status === 200) {
+					var type = xhr2.getResponseHeader('Content-Type');
+					if (type.indexOf("text") !== 1) {
+						var response = xhr2.responseText;
+						response = JSON.parse(response);
+						if(response && response["result"]){
+							//var votingNum = parseInt(response["result"]);
+							//if(votingNum <=0) addText(element,"0");
+							//else addText(element,votingNum);
+							callback(response["result"]);
+						}else{
+							alert(xhr2.responseText);
+						}
+					}
+				}
+			}
+			xhr2.send(JSON.stringify(parameter));
+		}
+		function appendIntToData(data,bn){
+			var hexVal = bnToHex(bn).toLowerCase();
+			while(hexVal.length<64){
+				hexVal = hexVal+"0";
+			}
+			data += hexVal;
+			return data;
+		}
+		function appendTextToData(data,txt){
+			var encodedText = encode_utf8(txt);
+			var textLength = encodedText.length/2;
+			textLength = textLength.toString(16).toLowerCase(); //Make it text
+			while(textLength.length<64){
+				textLength = "0"+textLength;
+			}
+			data += textLength;
+			//Append until fit 64 bytes
+			while(encodedText.length %64 !=0){
+				encodedText = encodedText+"0";
+			}
+			data += encodedText;
+			return data;
+		}
+		function bnToHex(bn) {
+		  bn = BigInt(bn);
+		  var hex = bn.toString(16);
+		  if (hex.length % 2) { hex = '0' + hex; }		  
+		  return hex;
+		}
+		function hexToBn(hex) {
+		  if(hex.startsWith("0x")) hex = hex.substring(2);
+		  if (hex.length % 2) {
+			hex = '0' + hex;
+		  }
+		  var bn = BigInt('0x' + hex);
+		  return bn;
+		}
+	</script>
+	<style>
+	*{
+		margin: auto;
+		text-align: center;
+		width: 80%;
+	}
+	img{
+		width: 60%;
+	}
+	</style>
+</head>
+<body>
+<h1>民間區塊鏈2019區議會選舉</h1>
+<h1>Folk 2019 Hong Kong district council election on blockchain</h1>
+<br><br>
+<h3>選舉流程 (香港時間) Election Timeline (Hong Kong Time)</h3>
+<p>試運 2019年11月17日晚上10點開始至22日晚上10點 
+Test polling from 10pm 17th to 10pm 21th Nov 2019</p>
+<p>公佈試運投票結果22日晚上11點 Announce the test polling result at 11pm 21th Nov 2019 <a href="result_test.html">結果網頁 Result page </a></p>
+<p>正式投票 2019年11月24日早上7點半開始至24日晚上10點半 
+Real polling from 7:30am 24th to 10:30pm 24th Nov 2019</p>
+<p>公佈正式投票結果25日晚上12點01分 Announce the election result at 12:01am 25th Nov 2019 <a href="result_real.html">結果網頁 Result page </a></p>
+<br>
+<br><br>
+<h3>選舉現時狀態 Election Status:</h3>
+<text id="votingStatus"></text>
+<br><br>
+<p>這個票站是: This votebox is:</p>
+<text id="voteboxName"></text>
+<br>
+<a href="votebox.html">票站列表和投票統計 List of votebox website and voting statistics</a> 
+<p>任何票站都隨時可能因太多流量或受到攻擊而關閉, 但只要有一個票站在, 選舉都能夠繼續舉行
+Any votebox may be down anytime as too much traffic / attacked, 
+but the election can still go on as long as not all votebox is dead</p>
+<br>
+<br><br>
+<h3>投票</h3>
+<p>每人只能於一個選區投一票, 如你已經投票, 則所任何選區都不能投票. 如你懷疑身份被盜來投票, 請聯絡<text id="problemContact"></text>以新選票取代舊選票</p>
+<p>Each person can vote once in one council only. If you have voted, you cannot vote again in any council. 
+If you think someone stole your identity and voted, please contact<text id="problemContact2"></text>to replace the old vote by the new vote.</p>
+<p>1) 到Etherscan.io (中立區塊鏈資訊平台), 使用選舉智能合約, 輸入中文全名和身份證號碼以得到選民號碼 (VoterID)
+Visit Etherscan.io (neutral Ethereum blockchain explorer), use election smart contract, input your full name and HKID number to get VoterID</p>
+<a id="smartcontractAddr" href="">Link</a><br>
+<p>圖示 Example</p><img src="img/voterID.JPG"/><br>
+<p>2) 輸入電郵, 我們將發送一個驗證碼到你的電郵, 確保你是真人和沒有投過票. 
+Input email, we will send you a verification code to make sure you are real person and have not been voted before.</p>
+<input type="email" id="email" placeholder="Put your email here"></input><button onclick="sendEmailCode()">發送驗證碼 Send verification code</button>
+<br><br>
+<p>3) 填寫選票並加密 Fill-in the vote and encrypt</p>
+<div>
+輸入VoterID Input VoterID<input type="text" id="voterID" type="number" min="10000000000000000000000000000000000000000000000000000000000000000" step="1" placeholder="輸入VoterID Input VoterID"></input><br>
+輸入驗證碼 Input verification code<input type="text" id="emailCode" type="number" min="10000000" max="100000000" step="1" placeholder="輸入驗證碼 Input verification code"></input><br>
+選擇選區 Select the council to vote<select id="council" onchange="onChangeCouncil(this.value)"><option value=""></option></select><br>
+選擇候選人 Select candidate<select id="candidate"></select><br>
+<button onclick="submitVote()">加密 Encrypt</button>
+</div>
+<p>加密選票號碼, 如保留此號在Etherscan查證選票是否有效, 和有問題時追查用. 因存有你的投票選擇, 勿把此號分享給他人.
+Encrypted vote, please keep this vote to check if your vote is submitted on Etherscan and problem tracing.
+As this vote contains your voting choice, please this vote private.</p>
+<p><b><text id="encryptedVote" style="overflow-wrap: break-word;"></text></b></p>
+<p>4) 提交選票 Submit the vote to blockchain</p>
+<button onclick="uploadVote()">提交選票 Submit the vote</button>
+<p>提交選票交易記錄, 當顯示成功即你的選票已經成功繳交.
+Vote submission transaction. When the transaction is confirmed. Your vote has been submitted. <text id="voteTransaction"></text></p>
+
+<br><br>
+<p>   </p>
+</body>
+</html>

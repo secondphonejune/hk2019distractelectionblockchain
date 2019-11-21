@@ -1,0 +1,185 @@
+<html>
+<head>    
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Blockchain based folk election project for Hong Kong 2019 District Council Election">
+    <!-- SITE TITLE -->
+    <title>民間區塊鏈2019區議會選舉 Folk 2019 Hong Kong District Council Election on Blockchain</title>
+    
+	<style id="antiClickjack">
+		body{display:none !important;}
+	</style>
+	<script type="text/javascript">
+		if (self === top) {
+			var antiClickjack = document.getElementById("antiClickjack");
+			antiClickjack.parentNode.removeChild(antiClickjack);
+		} else {
+			top.location = self.location;
+		}
+		function addText(root, str){
+			var text = document.createTextNode(str);
+			var ele = document.getElementById(root);
+			ele.innerHTML = "";
+			ele.appendChild(text);
+		}
+		function escapeHTML(text) {
+		  var map = {
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&#039;'
+		  };
+
+		  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+		}
+		var smartContractAddr = "";
+		(function () {
+			// read text from URL location
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', 'config.json', true);
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					var type = xhr.getResponseHeader('Content-Type');
+					if (type.indexOf("text") !== 1) {
+						var response = xhr.responseText;
+						response = JSON.parse(response);
+						if(response && response["voteboxName"] && response["electionSmartcontractAddress"]){
+							smartContractAddr = encodeURIComponent(response["electionSmartcontractAddress"]);
+						}
+					}
+				}
+			}
+			xhr.send(null);
+		})();
+		(function () {
+			// read text from URL location
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', 'voteboxes.json', true);
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					var type = xhr.getResponseHeader('Content-Type');
+					if (type.indexOf("text") !== 1) {
+						var response = xhr.responseText;
+						response = JSON.parse(response);
+						if(response && response["Available_votebox"]){
+							for(var i in response["Available_votebox"]){
+								var eleHTML = "<p><a href=\""+escapeHTML(i)+"\">"+escapeHTML(i)
+									+"</a> <button onclick=\"getVoteCount('"+escapeHTML(response["Available_votebox"][i])
+									+"','vote"+escapeHTML(i)+"')\">View realtime vote counts</button><text id=\"vote"+escapeHTML(i)+"\"></text></p>";
+								voteBoxList.innerHTML += eleHTML;
+							}
+							
+						}
+					}
+				}
+			}
+			xhr.send(null);
+		})();
+		(function () {
+			// read text from URL location
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', 'councils.json', true);
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					var type = xhr.getResponseHeader('Content-Type');
+					if (type.indexOf("text") !== 1) {
+						var response = xhr.responseText;
+						response = JSON.parse(response);
+						if(response && response["councils"]){
+							for(var i in response["councils"]){
+								var councilName = escapeHTML(response["councils"][i]);
+								var eleHTML = "<p>"+councilName+"<button onclick=\"getVoteCount('"+councilName
+									+"','vote"+councilName+"',true)\">View realtime vote counts</button><text id=\"vote"+councilName+"\"></text></p>";
+								councilList.innerHTML += eleHTML;
+							}
+							
+						}
+					}
+				}
+			}
+			xhr.send(null);
+		})();
+		function getVoteCount(address,element,isCouncil=false){
+			if(!isCouncil && (address.length != 42 || !address.startsWith("0x"))){
+				alert("Invalid address");
+			}
+			var data="";
+			if(!isCouncil) data = "0x8f7f4f98000000000000000000000000"+address.substring(2).toLowerCase();
+			else{
+				data = "0xcd1bf2ff0000000000000000000000000000000000000000000000000000000000000020";
+				var encodedText = encode_utf8(address);
+				var textLength = encodedText.length/2;
+				textLength = ""+textLength; //Make it text
+				while(textLength.length<64){
+					textLength = "0"+textLength;
+				}
+				data += textLength;
+				//Append until fit 64 bytes
+				while(encodedText.length %64 !=0){
+					encodedText = encodedText+"0";
+				}
+				data += encodedText;
+			}
+			var xhr2 = new XMLHttpRequest();
+			xhr2.open('POST', 'https://node3.web3api.com/', true);
+			var parameter = {"jsonrpc":"2.0","id":1,"method":"eth_call",
+				"params":[{"to":smartContractAddr,
+					"data":data}
+					,"latest"]
+			};
+			xhr2.onreadystatechange = function () {
+				if (xhr2.readyState === 4 && xhr2.status === 200) {
+					var type = xhr2.getResponseHeader('Content-Type');
+					if (type.indexOf("text") !== 1) {
+						var response = xhr2.responseText;
+						response = JSON.parse(response);
+						if(response && response["result"]){
+							var votingNum = parseInt(response["result"]);
+							if(votingNum <=0) addText(element,"0");
+							else addText(element,votingNum);
+						}else{
+							alert(xhr2.responseText);
+						}
+					}
+				}
+			}
+			xhr2.send(JSON.stringify(parameter));
+		}
+		function encode_utf8(s){
+		  return encodeURIComponent(s).replace(new RegExp("%","g"),"").toLowerCase();
+		}
+	</script>
+	<style>
+	*{
+		margin: auto;
+		text-align: center;
+		width: 80%;
+	}
+	img{
+		width: 60%;
+	}
+	button{
+		width:30%;
+	}
+	</style>
+</head>
+<body>
+<h1>民間區塊鏈2019區議會選舉</h1>
+<h1>Folk 2019 Hong Kong district council election on blockchain</h1>
+<br><br>
+<h3>票站列表和投票統計 List of votebox website and voting statistics</h3> 
+<br>
+<p>票站列表 List of votebox</p>
+<div id="voteBoxList"></div>
+
+<br>
+<p>選區列表 List of councils</p>
+<div id="councilList"></div>
+
+
+<br><br>
+<p>   </p>
+</body>
+</html>
